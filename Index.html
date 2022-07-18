@@ -1,0 +1,283 @@
+
+<!-- 
+
+new update:
+-- added bullet countdown
+-- fixed some bugs
+
+-->
+
+
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Page Title</title>
+        <style>
+        
+        body,html{
+    width:100%;
+    height:100%;
+    background-color:#ccc;
+}
+*{
+    padding:0;
+    margin:0;
+}
+div{
+    text-align:center;
+    margin-top:30px;
+}
+#left,#right,#fire{
+    padding:20px;
+    margin-right:20px;
+    margin-left:20px;
+    border-radius:26px;
+}
+
+p{
+margin-top:25px;
+    text-align:center ;
+}
+#retry{
+border: 0;
+border-radius:25px;
+padding:25px 35px;
+}
+.center{
+    position:absolute ;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+   
+}
+#play{
+    width:250px;
+    height:250px;
+    background-color:#fff;
+    border-radius:25px;
+}
+
+        
+        </style>
+    </head>
+    <body>
+        <canvas id="canv"></canvas>
+        <div>
+            <button id="left">Left</button>
+            <button id="fire">Fire</button>
+            <button id="right">Right</button>
+        </div>
+        <div class="center" id="play">
+        <p id="msg"></p>
+        <button id="retry" class="center">Play Again</button> 
+        </div>
+        <script>
+        window.onload = start;
+
+    
+function start(){
+var tankArray = [],
+    enemyArray = [];
+    tankArray.length = 0;
+    enemyArray.length = 0;
+    var canv = document.getElementById("canv"),
+    page_width = window.innerWidth,
+    page_height = window.innerHeight;
+    canv.width = page_width;
+    canv.height = page_height - 200,
+    ctx = canv.getContext("2d"),
+  left=document.getElementById("left"),
+    right = document.getElementById("right"),
+    fire= document.getElementById("fire"),
+    play = document.getElementById("play"),
+    msg = document.getElementById("msg"),
+    retry = document.getElementById("retry"),
+    pause = false;
+    
+    
+    
+    
+    
+    canv.style.backgroundColor = "black";
+    
+    play.style.display = "none";
+    
+    class Tank{
+        constructor(x,y,w,h,color){
+            this.x = x;
+            this.y = y;
+            this.w = w;
+            this.h = h;
+            this.color = color;
+            this.num = 100;
+        }
+        draw(){
+            ctx.beginPath();
+            ctx.fillStyle = this.color;
+            ctx.rect(this.x,this.y,this.w,this.h);
+            ctx.fill();
+        }
+        update(){
+            this.draw();
+            if(this.x + this.w <= 0){
+                this.x = canv.width - this.w - 2;
+            }else if(this.x + this.w >= canv.width){
+                this.x = 0;
+            }
+        }
+        rnum(){
+        var rnd = Math.floor(Math.random() * (page_width-50 - 50) + 50);        
+        if( rnd%2 ===0){
+            return rnd;
+        }else{
+            return rnd+1;
+        }
+          
+        }
+        updateEnemy(){
+            this.draw();
+            if(this.num >= this.x){
+                this.x += 2;
+            }else if(this.num <= this.x){
+                this.x -= 2;
+            }
+            if(this.x == this.num){
+                this.x += 0;
+                
+                this.num = this.rnum();
+                
+            }
+    }
+    }
+    
+    class Fire{
+        constructor(x,y,rad,color){
+            this.x = x;
+            this.y = y;
+            this.rad = rad;
+            this.color = color;
+        }
+        draw(){
+            ctx.beginPath();
+            ctx.fillStyle=this.color;
+              ctx.arc(this.x,this.y,this.rad,Math.PI*2,0,false);
+            ctx.fill();
+        }
+        update(){
+            this.draw();
+            this.y += 15;
+            
+        }
+        updateEnemy(){
+            this.draw();
+            this.y -= 15;
+        }
+        
+    }
+    
+    class Text{
+        constructor(){
+            this.x = 25;
+            this.y = 25;
+            ctx.font = "20px Arials";
+            this.bullets = 5;
+            this.text = "Bullets: "+this.bullets;
+            this.color = "pink";
+        }
+        draw(){
+            ctx.beginPath();
+            ctx.fillStyle = this.color;
+            ctx.fillText(this.text,this.x,this.y)
+        }
+        update(){
+            this.draw();
+        }
+    }
+    
+    
+    
+    var tank = new Tank(100,50,36,50,"green");
+    var enemy = new Tank(300,page_height -300,36,50,"red");
+    var text_score = new Text();
+    
+    (function anime(){
+    if(!pause){
+       requestAnimationFrame(anime); 
+    }
+        
+        ctx.clearRect(0,0,canv.width,canv.height);
+        tank.update();
+        enemy.updateEnemy();
+        text_score.update();
+        tankArray.forEach((el,index)=>{
+            el.update();
+            if(el.y >= page_height){
+                setTimeout(()=>{
+                    tankArray.splice(index,1);
+                },0);
+            }
+            if(el.y >= enemy.y && el.x >= enemy.x && el.x <= enemy.x + enemy.w ){
+                pause = true;
+               play.style.display = "block";
+            msg.innerText = "Nice Shot"; 
+            
+            }
+            
+        });
+        
+        enemyArray.forEach((el,index)=>{
+          el.updateEnemy();
+          if(el.y <= 0){
+          setTimeout(()=>{
+         enemyArray.splice(index,1);
+                },0);
+            }
+            if(el.y <= tank.y + tank.h && el.x >= tank.x && el.x <= tank.x + tank.w){
+            pause = true;
+            play.style.display = "block";
+            msg.innerText = "You Lost:(";
+        }
+        
+        });
+        if(text_score.bullets == 0 && tankArray.length == 0){
+            pause = true;
+            play.style.display = "block";
+            msg.innerText = "Out of bullets"; 
+        }
+    })();
+    
+    
+    
+   setInterval(()=>{
+       var tank_fire = new Fire(enemy.x + enemy.w/2, enemy.y,10,"yellow");
+        enemyArray.push(tank_fire); 
+    },500);
+    
+    
+    
+    var speed = 25;
+    
+    right.addEventListener("click",()=>{
+        tank.x += speed;
+    });
+    left.addEventListener("click",()=>{
+        tank.x -= speed;
+    });
+    fire.addEventListener("click",()=>{
+text_score.bullets -= 1;
+    if(text_score.bullets >= 0){
+        var tank_fire =new Fire(tank.x + tank.w/2,tank.y+tank.h,10,"blue");
+        tankArray.push(tank_fire);
+    
+    text_score.text = "Bullets: "+ text_score.bullets;
+    }
+    });  retry.addEventListener("click",start);
+}
+
+
+
+        
+        
+        </script>
+    </body>
+</html>
